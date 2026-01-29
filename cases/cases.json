@@ -4,12 +4,12 @@
     "pucoCase": "00947795",
     "dateDetected": "2025-12-30",
     "impossibleCount": 23,
-    "improbableCount": 45,
+    "improbableCount": 0,
     "serviceAmperage": 200,
-    "maxUsage": "174.6 kWh in 1 hour",
-    "overcharge": "$75.00",
+    "maxUsage": "834 kWh charged vs 258 kWh max possible",
+    "overcharge": "$102.61",
     "status": "Filed with PUCO",
     "submittedDate": "2026-01-28",
-    "notes": "Multiple hours exceeding 3x service capacity"
+    "notes": "23 impossible readings totaling 834 kWh. Maximum possible with 200A service: 258 kWh. Excess: 577 kWh (3.2x capacity)."
   }
 ]
