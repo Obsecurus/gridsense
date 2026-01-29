@@ -1889,6 +1889,52 @@ Thank you!`;
             document.getElementById('sharePreview').innerHTML = '<strong>✅ Good news!</strong> No impossible anomalies detected. Help others check their bills by sharing this tool.';
             document.getElementById('shareSection').classList.remove('hidden');
         }
+
+        // Auto-load case from URL parameter
+        async function loadCaseFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const caseFile = urlParams.get('case');
+
+            if (caseFile) {
+                try {
+                    // Show loading message
+                    const resultsSection = document.getElementById('resultsSection');
+                    resultsSection.classList.remove('hidden');
+                    resultsSection.scrollIntoView({ behavior: 'smooth' });
+
+                    // Fetch the CSV file
+                    const response = await fetch(caseFile);
+                    if (!response.ok) throw new Error('Failed to load case file');
+
+                    const text = await response.text();
+                    parsedData = parseCSV(text);
+
+                    if (parsedData.length === 0) {
+                        alert('No valid data found in case file');
+                        return;
+                    }
+
+                    config = getConfiguration();
+                    allAnomalies = detectAnomalies(parsedData, config);
+
+                    displayResults(parsedData, allAnomalies, config);
+
+                    // Show a banner that this is a submitted case
+                    const fileName = caseFile.split('/').pop();
+                    const banner = document.createElement('div');
+                    banner.style.cssText = 'background: #667eea; color: white; padding: 15px; text-align: center; border-radius: 8px; margin-bottom: 20px;';
+                    banner.innerHTML = `<strong>📊 Viewing Submitted Case:</strong> ${fileName} | <a href="cases.html" style="color: white; text-decoration: underline;">← Back to Cases</a>`;
+                    resultsSection.insertBefore(banner, resultsSection.firstChild);
+
+                } catch (error) {
+                    alert('Error loading case: ' + error.message);
+                    console.error(error);
+                }
+            }
+        }
+
+        // Check for case parameter on page load
+        window.addEventListener('DOMContentLoaded', loadCaseFromURL);
     </script>
 </body>
 </html>
