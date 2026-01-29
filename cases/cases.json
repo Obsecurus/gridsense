@@ -1,0 +1,15 @@
+[
+  {
+    "filename": "case-00947795.csv",
+    "pucoCase": "00947795",
+    "dateDetected": "2025-12-30",
+    "impossibleCount": 23,
+    "improbableCount": 45,
+    "serviceAmperage": 200,
+    "maxUsage": "174.6 kWh in 1 hour",
+    "overcharge": "$75.00",
+    "status": "Filed with PUCO",
+    "submittedDate": "2026-01-28",
+    "notes": "Multiple hours exceeding 3x service capacity"
+  }
+]

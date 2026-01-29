@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submitted Cases - GridSense</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .nav {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .nav a {
+            display: inline-block;
+            padding: 12px 30px;
+            background: white;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .nav a:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .case-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .case-card {
+            background: #f9f9f9;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .case-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .case-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .case-number {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-filed {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .status-resolved {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-pending {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .case-detail {
+            margin: 10px 0;
+            font-size: 0.95rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .case-detail strong {
+            color: #333;
+        }
+
+        .case-detail .value {
+            color: #666;
+        }
+
+        .highlight-red {
+            color: #c62828;
+            font-weight: 600;
+        }
+
+        .case-notes {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 0.9rem;
+            color: #666;
+            font-style: italic;
+        }
+
+        .download-link {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .download-link:hover {
+            background: #5568d3;
+        }
+
+        .share-case-btn {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: #1DA1F2;
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: background 0.2s;
+        }
+
+        .share-case-btn:hover {
+            background: #1a8cd8;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .case-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Submitted Cases</h1>
+            <p>Public record of billing anomalies detected by GridSense users</p>
+        </div>
+
+        <div class="nav">
+            <a href="index.html">← Back to Anomaly Detector</a>
+        </div>
+
+        <div class="card">
+            <h2 style="margin-bottom: 15px;">About This Database</h2>
+
+            <div class="info-box">
+                <strong>📁 What's Here:</strong> This database contains anonymized usage data from users who detected physically impossible billing anomalies. All personal information has been removed, but the usage patterns and PUCO case numbers (when available) are preserved.
+            </div>
+
+            <div class="warning-box">
+                <strong>⚖️ Legal Notice:</strong> These cases represent instances where electricity usage readings appear to exceed the physical capacity of the electrical service. Each case may have various causes and requires individual investigation. This database is for informational and research purposes.
+            </div>
+
+            <p style="margin-top: 15px; line-height: 1.6;">
+                <strong>How to Contribute:</strong> If you've discovered billing anomalies using GridSense, you can submit your anonymized data. Use the main tool to analyze your usage, then click "Submit Anonymous Data to GitHub" to contribute.
+            </p>
+        </div>
+
+        <div class="card">
+            <h2 style="margin-bottom: 20px;">Cases Database</h2>
+            <div id="casesContainer" class="case-grid">
+                <p style="text-align: center; padding: 40px; color: #666;">Loading cases...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load and display cases
+        fetch('cases/cases.json')
+            .then(response => response.json())
+            .then(cases => {
+                displayCases(cases);
+            })
+            .catch(error => {
+                console.error('Error loading cases:', error);
+                document.getElementById('casesContainer').innerHTML =
+                    '<p style="text-align: center; padding: 40px; color: #666;">No cases available yet. Be the first to submit!</p>';
+            });
+
+        function displayCases(cases) {
+            const container = document.getElementById('casesContainer');
+
+            if (!cases || cases.length === 0) {
+                container.innerHTML = '<p style="text-align: center; padding: 40px; color: #666;">No cases submitted yet. Be the first to contribute!</p>';
+                return;
+            }
+
+            // Sort by date (newest first)
+            cases.sort((a, b) => new Date(b.submittedDate) - new Date(a.submittedDate));
+
+            const html = cases.map(c => {
+                const statusClass = {
+                    'Filed with PUCO': 'status-filed',
+                    'Resolved': 'status-resolved',
+                    'Pending': 'status-pending'
+                }[c.status] || 'status-pending';
+
+                return `
+                    <div class="case-card">
+                        <div class="case-header">
+                            <div class="case-number">
+                                ${c.pucoCase ? `Case #${c.pucoCase}` : 'Case Pending'}
+                            </div>
+                            <span class="status-badge ${statusClass}">${c.status}</span>
+                        </div>
+
+                        <div class="case-detail">
+                            <strong>Date Detected:</strong>
+                            <span class="value">${c.dateDetected}</span>
+                        </div>
+
+                        <div class="case-detail">
+                            <strong>Service:</strong>
+                            <span class="value">${c.serviceAmperage}A</span>
+                        </div>
+
+                        <div class="case-detail">
+                            <strong>Impossible Readings:</strong>
+                            <span class="value highlight-red">${c.impossibleCount}</span>
+                        </div>
+
+                        <div class="case-detail">
+                            <strong>Max Usage:</strong>
+                            <span class="value highlight-red">${c.maxUsage}</span>
+                        </div>
+
+                        <div class="case-detail">
+                            <strong>Estimated Overcharge:</strong>
+                            <span class="value">${c.overcharge}</span>
+                        </div>
+
+                        ${c.notes ? `<div class="case-notes">${c.notes}</div>` : ''}
+
+                        <a href="cases/${c.filename}" class="download-link" download>
+                            📥 Download Data
+                        </a>
+                        <button class="share-case-btn" onclick="shareCase('${c.pucoCase || c.dateDetected}', '${c.impossibleCount}', '${c.maxUsage}', '${c.serviceAmperage}', '${c.overcharge}')">
+                            📢 Share This Case
+                        </button>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+        }
+
+        function shareCase(caseId, impossibleCount, maxUsage, serviceAmperage, overcharge) {
+            const url = 'https://gridsense.us/cases.html';
+            const caseLabel = caseId.startsWith('00') ? `PUCO Case #${caseId}` : `Case from ${caseId}`;
+
+            const twitterText = `🚨 ${caseLabel}: ${impossibleCount} IMPOSSIBLE readings found!\n\n• Max usage: ${maxUsage} (${serviceAmperage}A service)\n• Overcharge: ${overcharge}\n\nThis violates physics. Check YOUR bill at gridsense.us\n\n#UtilityBilling #ConsumerRights`;
+
+            const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterText)}`;
+            window.open(twitterUrl, '_blank', 'width=550,height=420');
+        }
+    </script>
+</body>
+</html>

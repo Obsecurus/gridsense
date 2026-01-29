@@ -1,0 +1,1894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power Anomaly Detector</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .upload-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .file-input-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .config-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .config-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .config-group label {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .config-group select,
+        .config-group input {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .config-group select:focus,
+        .config-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .analyze-btn {
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(17, 153, 142, 0.4);
+        }
+
+        .analyze-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .summary-card.green {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+
+        .summary-card.orange {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .summary-card.red {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+        }
+
+        .summary-card h3 {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .summary-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-bottom: 30px;
+        }
+
+        .table-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .filter-toggle input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .filter-toggle label {
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .export-btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .export-btn:hover {
+            background: #5568d3;
+        }
+
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .slider-container input[type="range"] {
+            width: 100%;
+        }
+
+        .slider-value {
+            font-size: 0.85rem;
+            color: #666;
+            text-align: center;
+        }
+
+        .anomaly-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .anomaly-table th {
+            background: #f5f5f5;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #ddd;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .anomaly-table th:hover {
+            background: #ebebeb;
+        }
+
+        .anomaly-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .anomaly-table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .severity-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .severity-impossible {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .severity-improbable {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .file-name {
+            color: #667eea;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        .collapsible {
+            background: #f5f5f5;
+            cursor: pointer;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            text-align: left;
+            width: 100%;
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+            margin-bottom: 10px;
+        }
+
+        .collapsible:hover {
+            background: #ebebeb;
+        }
+
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .collapsible-content.active {
+            max-height: 2000px;
+            transition: max-height 0.5s ease-in;
+        }
+
+        .collapsible-content-inner {
+            padding: 20px 0;
+        }
+
+        .instruction-step {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+        }
+
+        .instruction-step h4 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .instruction-step ol, .instruction-step ul {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+
+        .submit-data-btn {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: #333;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        .submit-data-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(250, 112, 154, 0.4);
+        }
+
+        .share-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .share-section h3 {
+            color: white;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .share-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .share-btn {
+            flex: 1;
+            min-width: 150px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            color: white;
+        }
+
+        .share-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .share-btn.twitter {
+            background: #1DA1F2;
+        }
+
+        .share-btn.facebook {
+            background: #4267B2;
+        }
+
+        .share-btn.linkedin {
+            background: #0077B5;
+        }
+
+        .share-btn.reddit {
+            background: #FF4500;
+        }
+
+        .share-preview {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            text-align: left;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .share-preview strong {
+            color: #667eea;
+        }
+
+        .impact-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .impact-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #667eea;
+        }
+
+        .impact-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+            margin: 5px 0;
+        }
+
+        .impact-label {
+            font-size: 0.85rem;
+            color: #666;
+            line-height: 1.3;
+        }
+
+        .impact-icon {
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .chart-container {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚡ GridSense</h1>
+            <p>Identify impossible and improbable energy consumption patterns</p>
+            <p style="margin-top: 10px;"><a href="cases.html" style="color: white; text-decoration: underline;">View Submitted Cases</a></p>
+        </div>
+
+        <div class="card">
+            <button class="collapsible" onclick="toggleCollapsible(this)">
+                📋 How to Export Your Data from AEP <span>▼</span>
+            </button>
+            <div class="collapsible-content">
+                <div class="collapsible-content-inner">
+                    <div class="instruction-step">
+                        <h4>Step 1: Log in to AEP Website</h4>
+                        <ol>
+                            <li>Visit <strong>aepohio.com</strong> (or your regional AEP site)</li>
+                            <li>Log in to your account</li>
+                            <li>Navigate to "My Usage" or "Energy Usage"</li>
+                        </ol>
+                    </div>
+
+                    <div class="instruction-step">
+                        <h4>Step 2: Set Date Range</h4>
+                        <ol>
+                            <li>Select "Export Usage Data" or "Download Data"</li>
+                            <li>Choose a date range (up to 1 year)</li>
+                            <li>Select <strong>15-minute interval data</strong> (most detailed)</li>
+                            <li>Choose <strong>CSV format</strong></li>
+                        </ol>
+                    </div>
+
+                    <div class="instruction-step">
+                        <h4>Step 3: Download and Upload Here</h4>
+                        <ol>
+                            <li>Download the CSV file</li>
+                            <li>Upload it using the form below</li>
+                            <li>Configure your electrical service settings</li>
+                            <li>Click "Analyze Usage Data"</li>
+                        </ol>
+                    </div>
+
+                    <div class="info-box">
+                        <strong>💡 Tip:</strong> The CSV file should include columns for DATE, START TIME, END TIME, and USAGE (kWh). This tool works with the standard AEP export format.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <button class="collapsible" onclick="toggleCollapsible(this)">
+                🔍 What This Tool Does <span>▼</span>
+            </button>
+            <div class="collapsible-content">
+                <div class="collapsible-content-inner">
+                    <p style="margin-bottom: 15px;">This tool analyzes your electrical usage data to identify potential billing errors and meter malfunctions by detecting:</p>
+
+                    <div class="instruction-step">
+                        <h4>Physically Impossible Readings (Red)</h4>
+                        <p>Usage that exceeds your electrical service capacity. For example:</p>
+                        <ul>
+                            <li>200A service @ 240V = 48 kW maximum power</li>
+                            <li>Maximum possible in 1 hour = 48 kWh</li>
+                            <li>A reading of 165 kWh in 1 hour is <strong>impossible</strong> (3.4x capacity)</li>
+                        </ul>
+                    </div>
+
+                    <div class="instruction-step">
+                        <h4>Statistically Improbable Readings (Orange)</h4>
+                        <p>Readings that are extreme outliers compared to your typical usage:</p>
+                        <ul>
+                            <li>Sudden spikes (>5x previous hour average)</li>
+                            <li>Statistical outliers (top 2% most extreme)</li>
+                            <li>Patterns inconsistent with normal consumption</li>
+                        </ul>
+                    </div>
+
+                    <div class="warning-box">
+                        <strong>⚖️ Legal Notice:</strong> This tool is provided for informational purposes to help consumers identify potential billing discrepancies. Results should be verified and used as supporting evidence when disputing utility bills. We make no claims about the accuracy of utility meter readings without proper investigation.
+                    </div>
+
+                    <div class="info-box">
+                        <strong>🔒 Privacy:</strong> All analysis happens locally in your browser. Your data is never uploaded to any server. This tool works completely offline.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <button class="collapsible" onclick="toggleCollapsible(this)">
+                📞 How to File a Complaint with PUCO <span>▼</span>
+            </button>
+            <div class="collapsible-content">
+                <div class="collapsible-content-inner">
+                    <p style="margin-bottom: 15px;">If you discover billing anomalies, you can file a formal complaint with the Public Utilities Commission of Ohio (PUCO):</p>
+
+                    <div class="instruction-step">
+                        <h4>Option 1: File Online (Fastest)</h4>
+                        <ol>
+                            <li>Visit <strong>puco.ohio.gov</strong></li>
+                            <li>Click "File a Complaint" or navigate to the consumer section</li>
+                            <li>Select "Electric" as the utility type</li>
+                            <li>Fill out the online complaint form with:
+                                <ul>
+                                    <li>Your account information</li>
+                                    <li>Dates of the billing discrepancies</li>
+                                    <li>Specific readings that are impossible/improbable</li>
+                                    <li>Attach your exported anomaly report (CSV)</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+
+                    <div class="instruction-step">
+                        <h4>Option 2: Call PUCO</h4>
+                        <ul>
+                            <li><strong>Phone:</strong> 1-800-686-PUCO (7826)</li>
+                            <li><strong>TTY:</strong> 1-800-686-1570</li>
+                            <li><strong>Hours:</strong> Monday-Friday, 8:00 AM - 5:00 PM</li>
+                        </ul>
+                    </div>
+
+                    <div class="instruction-step">
+                        <h4>Option 3: Mail a Written Complaint</h4>
+                        <p><strong>Public Utilities Commission of Ohio</strong><br>
+                        180 East Broad Street<br>
+                        Columbus, OH 43215</p>
+                    </div>
+
+                    <div class="instruction-step">
+                        <h4>What to Include in Your Complaint</h4>
+                        <ul>
+                            <li>Your name, address, and account number</li>
+                            <li>Utility company name (e.g., AEP Ohio)</li>
+                            <li>Specific dates showing impossible readings</li>
+                            <li>Calculations showing readings exceed service capacity</li>
+                            <li>Screenshots or printed reports from this tool</li>
+                            <li>Copies of bills showing overcharges</li>
+                            <li>Any communication with the utility about the issue</li>
+                        </ul>
+                    </div>
+
+                    <div class="warning-box">
+                        <strong>⏱️ Important:</strong> Before filing with PUCO, contact your utility company first. Many utilities require you to attempt resolution directly with them. Document all communications.
+                    </div>
+
+                    <div class="info-box">
+                        <strong>📄 Tip:</strong> Use the "Export to CSV" button below to generate a detailed report of all anomalies to attach to your PUCO complaint.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="upload-section">
+                <div class="file-input-wrapper">
+                    <input type="file" id="csvFile" accept=".csv">
+                    <label for="csvFile" class="file-input-label">
+                        📁 Upload CSV File
+                    </label>
+                </div>
+                <div id="fileName" class="file-name hidden"></div>
+
+                <div class="config-panel">
+                    <div class="config-group">
+                        <label for="amperage">Service Amperage</label>
+                        <select id="amperage">
+                            <option value="100">100A</option>
+                            <option value="200" selected>200A</option>
+                            <option value="400">400A</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                        <input type="number" id="customAmperage" class="hidden" placeholder="Enter amperage">
+                    </div>
+
+                    <div class="config-group">
+                        <label for="voltage">Voltage</label>
+                        <select id="voltage">
+                            <option value="120">120V</option>
+                            <option value="240" selected>240V</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                        <input type="number" id="customVoltage" class="hidden" placeholder="Enter voltage">
+                    </div>
+
+                    <div class="config-group">
+                        <label for="improbablePercent">Improbable: Top <span id="percentValue">2</span>% Worst</label>
+                        <div class="slider-container">
+                            <input type="range" id="improbablePercent" min="1" max="20" value="2" step="1">
+                            <div class="slider-value">Flag the top <span id="percentDisplay">2</span>% most extreme readings</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="analyzeBtn" class="analyze-btn" disabled>Analyze Usage Data</button>
+            </div>
+        </div>
+
+        <div id="resultsSection" class="hidden">
+            <div class="card">
+                <h2 style="margin-bottom: 20px;">📊 Analysis Summary</h2>
+                <div class="summary-cards" id="summaryCards"></div>
+
+                <div id="impactSection" class="hidden" style="margin-top: 20px;">
+                    <h3 style="margin-bottom: 15px;">⚡ What Could This Excess Energy Power?</h3>
+                    <p style="color: #666; margin-bottom: 15px;">Your impossible readings represent energy that couldn't have been consumed. Here's what that amount of energy could actually power:</p>
+                    <div class="impact-cards" id="impactCards"></div>
+                </div>
+
+                <div id="shareSection" class="share-section hidden">
+                    <h3>🚨 Share Your Findings</h3>
+                    <p style="color: white; margin-bottom: 15px;">Help spread awareness about billing errors. Share your impossible readings:</p>
+                    <div class="share-buttons" id="shareButtons"></div>
+                    <div class="share-preview" id="sharePreview"></div>
+                    <div id="shareImageContainer" style="margin-top: 20px; text-align: center;"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 style="margin-bottom: 20px;">📈 Usage Timeline</h2>
+                <div class="chart-container">
+                    <canvas id="usageChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="table-controls">
+                    <h2>🚨 Detected Anomalies</h2>
+                    <div class="filter-controls">
+                        <div class="filter-toggle">
+                            <input type="checkbox" id="showImpossible" checked>
+                            <label for="showImpossible">Show Impossible</label>
+                        </div>
+                        <div class="filter-toggle">
+                            <input type="checkbox" id="showImprobable" checked>
+                            <label for="showImprobable">Show Improbable</label>
+                        </div>
+                        <button id="exportBtn" class="export-btn">Export to CSV</button>
+                        <button id="submitDataBtn" class="submit-data-btn">📤 Submit Your Anonymous Data</button>
+                    </div>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="anomaly-table">
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable(0)">Date/Time</th>
+                                <th onclick="sortTable(1)">Usage (kWh)</th>
+                                <th onclick="sortTable(2)">Power (kW)</th>
+                                <th onclick="sortTable(3)">Severity</th>
+                                <th onclick="sortTable(4)">Reason</th>
+                                <th onclick="sortTable(5)">Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="anomalyTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let parsedData = [];
+        let allAnomalies = [];
+        let config = null;
+        let usageChart = null;
+
+        // File input handling
+        document.getElementById('csvFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('fileName').textContent = `Selected: ${file.name}`;
+                document.getElementById('fileName').classList.remove('hidden');
+                document.getElementById('analyzeBtn').disabled = false;
+            }
+        });
+
+        // Custom amperage/voltage handling
+        document.getElementById('amperage').addEventListener('change', function(e) {
+            const customInput = document.getElementById('customAmperage');
+            if (e.target.value === 'custom') {
+                customInput.classList.remove('hidden');
+            } else {
+                customInput.classList.add('hidden');
+            }
+        });
+
+        document.getElementById('voltage').addEventListener('change', function(e) {
+            const customInput = document.getElementById('customVoltage');
+            if (e.target.value === 'custom') {
+                customInput.classList.remove('hidden');
+            } else {
+                customInput.classList.add('hidden');
+            }
+        });
+
+        // Slider value display
+        document.getElementById('improbablePercent').addEventListener('input', function(e) {
+            const value = e.target.value;
+            document.getElementById('percentValue').textContent = value;
+            document.getElementById('percentDisplay').textContent = value;
+        });
+
+        // Toggle filters
+        document.getElementById('showImpossible').addEventListener('change', filterAnomalies);
+        document.getElementById('showImprobable').addEventListener('change', filterAnomalies);
+
+        // Main analysis button
+        document.getElementById('analyzeBtn').addEventListener('click', analyzeData);
+
+        // Export button
+        document.getElementById('exportBtn').addEventListener('click', exportToCSV);
+
+        // Submit data button (added dynamically when results are shown)
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.id === 'submitDataBtn') {
+                submitAnonymousData();
+            }
+        });
+
+        async function analyzeData() {
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('Please select a CSV file');
+                return;
+            }
+
+            document.getElementById('analyzeBtn').textContent = 'Analyzing...';
+            document.getElementById('analyzeBtn').disabled = true;
+
+            try {
+                const text = await file.text();
+                parsedData = parseCSV(text);
+
+                if (parsedData.length === 0) {
+                    alert('No valid data found in CSV');
+                    return;
+                }
+
+                config = getConfiguration();
+                allAnomalies = detectAnomalies(parsedData, config);
+
+                displayResults(parsedData, allAnomalies, config);
+
+                document.getElementById('resultsSection').classList.remove('hidden');
+                document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+            } catch (error) {
+                alert('Error analyzing file: ' + error.message);
+                console.error(error);
+            } finally {
+                document.getElementById('analyzeBtn').textContent = 'Analyze Usage Data';
+                document.getElementById('analyzeBtn').disabled = false;
+            }
+        }
+
+        function parseCSV(text) {
+            const lines = text.split('\n');
+            const data = [];
+            let dataStartIndex = -1;
+
+            // Find where data starts (after header row with TYPE,DATE,START TIME,...)
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].includes('TYPE,DATE,START TIME') ||
+                    lines[i].includes('TYPE') && lines[i].includes('DATE') && lines[i].includes('USAGE')) {
+                    dataStartIndex = i + 1;
+                    break;
+                }
+            }
+
+            if (dataStartIndex === -1) {
+                throw new Error('Could not find data header in CSV');
+            }
+
+            for (let i = dataStartIndex; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                const matches = line.match(/(?:^|,)(?:"([^"]*)"|([^,]*))/g);
+                if (!matches || matches.length < 5) continue;
+
+                const fields = matches.map(m => m.replace(/^,?"?|"?$/g, '').trim());
+
+                const date = fields[1];
+                const startTime = fields[2];
+                const endTime = fields[3];
+                const usageStr = fields[4];
+                const cost = fields[5];
+                const notes = fields[6] || '';
+
+                if (!date || !startTime || !usageStr) continue;
+
+                const usage = parseFloat(usageStr);
+                if (isNaN(usage)) continue;
+
+                // Calculate interval duration in hours
+                const start = parseTime(startTime);
+                const end = parseTime(endTime);
+                let duration = (end - start) / 60; // in hours
+                if (duration <= 0) duration += 24; // handle midnight crossing
+
+                data.push({
+                    date,
+                    startTime,
+                    endTime,
+                    usage,
+                    cost,
+                    notes,
+                    duration,
+                    power: usage / duration, // kW
+                    datetime: new Date(date + ' ' + startTime)
+                });
+            }
+
+            return data.sort((a, b) => a.datetime - b.datetime);
+        }
+
+        function parseTime(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        function getConfiguration() {
+            let amperage = parseInt(document.getElementById('amperage').value);
+            if (isNaN(amperage)) {
+                amperage = parseInt(document.getElementById('customAmperage').value) || 200;
+            }
+
+            let voltage = parseInt(document.getElementById('voltage').value);
+            if (isNaN(voltage)) {
+                voltage = parseInt(document.getElementById('customVoltage').value) || 240;
+            }
+
+            const improbablePercent = parseInt(document.getElementById('improbablePercent').value);
+
+            return {
+                amperage,
+                voltage,
+                maxPower: (amperage * voltage) / 1000, // kW
+                improbablePercent
+            };
+        }
+
+        function detectAnomalies(data, config) {
+            const anomalies = [];
+            const candidates = [];
+
+            // Calculate statistics by month
+            const monthlyStats = calculateMonthlyStats(data);
+
+            // First pass: identify impossible readings and calculate scores for others
+            data.forEach((reading, index) => {
+                const maxEnergyForInterval = config.maxPower * reading.duration;
+                const month = reading.date.substring(0, 7); // YYYY-MM
+                const stats = monthlyStats[month] || monthlyStats.overall;
+
+                // Check for physical impossibility
+                if (reading.usage > maxEnergyForInterval) {
+                    const requiredPower = reading.power;
+                    const maxPower = config.maxPower;
+                    const ratio = (requiredPower / maxPower).toFixed(1);
+                    anomalies.push({
+                        ...reading,
+                        severity: 'IMPOSSIBLE',
+                        reason: `Exceeds service capacity: ${requiredPower.toFixed(1)}kW required vs ${maxPower.toFixed(1)}kW max (${ratio}x)`,
+                        maxAllowed: maxEnergyForInterval,
+                        deviationScore: Infinity
+                    });
+                } else {
+                    // Calculate deviation scores for improbable candidates
+                    let deviationScore = 0;
+                    let reason = '';
+
+                    // Statistical deviation from monthly baseline
+                    if (stats && stats.stdDev > 0) {
+                        const sigmas = (reading.usage - stats.mean) / stats.stdDev;
+                        deviationScore = Math.max(deviationScore, sigmas);
+                        if (sigmas > 2) {
+                            reason = `Statistical outlier: ${sigmas.toFixed(1)}σ above monthly average (${stats.mean.toFixed(2)}kWh)`;
+                        }
+                    }
+
+                    // Sudden spike detection
+                    if (index >= 4) {
+                        const prevHourAvg = data.slice(Math.max(0, index - 4), index)
+                            .reduce((sum, r) => sum + r.usage, 0) / 4;
+                        if (prevHourAvg > 0) {
+                            const spikeRatio = reading.usage / prevHourAvg;
+                            if (spikeRatio > 5) {
+                                const spikeScore = spikeRatio * 2; // Weight spikes heavily
+                                if (spikeScore > deviationScore) {
+                                    deviationScore = spikeScore;
+                                    reason = `Sudden spike: ${spikeRatio.toFixed(1)}x previous hour average`;
+                                }
+                            }
+                        }
+                    }
+
+                    if (deviationScore > 0) {
+                        candidates.push({
+                            ...reading,
+                            severity: 'IMPROBABLE',
+                            reason,
+                            maxAllowed: maxEnergyForInterval,
+                            deviationScore
+                        });
+                    }
+                }
+            });
+
+            // Second pass: select top N% of improbable candidates
+            if (candidates.length > 0) {
+                candidates.sort((a, b) => b.deviationScore - a.deviationScore);
+                const topCount = Math.max(1, Math.ceil(candidates.length * (config.improbablePercent / 100)));
+                const topImprobable = candidates.slice(0, topCount);
+                anomalies.push(...topImprobable);
+            }
+
+            // Sort by datetime
+            return anomalies.sort((a, b) => a.datetime - b.datetime);
+        }
+
+        function calculateMonthlyStats(data) {
+            const monthlyData = {};
+
+            data.forEach(reading => {
+                const month = reading.date.substring(0, 7);
+                if (!monthlyData[month]) {
+                    monthlyData[month] = [];
+                }
+                monthlyData[month].push(reading.usage);
+            });
+
+            const stats = {};
+            for (const [month, values] of Object.entries(monthlyData)) {
+                // Remove extreme outliers before calculating stats
+                const sorted = [...values].sort((a, b) => a - b);
+                const q1 = sorted[Math.floor(sorted.length * 0.25)];
+                const q3 = sorted[Math.floor(sorted.length * 0.75)];
+                const iqr = q3 - q1;
+                const filtered = values.filter(v => v <= q3 + (3 * iqr));
+
+                const mean = filtered.reduce((a, b) => a + b, 0) / filtered.length;
+                const variance = filtered.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / filtered.length;
+                const stdDev = Math.sqrt(variance);
+
+                stats[month] = { mean, stdDev };
+            }
+
+            // Overall stats as fallback
+            const allValues = data.map(r => r.usage);
+            const overallMean = allValues.reduce((a, b) => a + b, 0) / allValues.length;
+            const overallVariance = allValues.reduce((sum, val) => sum + Math.pow(val - overallMean, 2), 0) / allValues.length;
+            stats.overall = { mean: overallMean, stdDev: Math.sqrt(overallVariance) };
+
+            return stats;
+        }
+
+        function filterAnomalies() {
+            if (!allAnomalies || allAnomalies.length === 0) return;
+
+            const showImpossible = document.getElementById('showImpossible').checked;
+            const showImprobable = document.getElementById('showImprobable').checked;
+
+            const filtered = allAnomalies.filter(a => {
+                if (a.severity === 'IMPOSSIBLE') return showImpossible;
+                if (a.severity === 'IMPROBABLE') return showImprobable;
+                return false;
+            });
+
+            displaySummaryCards(parsedData, filtered, config);
+            displayChart(parsedData, filtered, config);
+            displayAnomalyTable(filtered);
+        }
+
+        function displayResults(data, anomalies, config) {
+            displaySummaryCards(data, anomalies, config);
+            displayChart(data, anomalies, config);
+            displayAnomalyTable(anomalies);
+            displayImpactComparisons(anomalies, config);
+            displayShareButtons(anomalies, config);
+        }
+
+        function displaySummaryCards(data, anomalies, config) {
+            const impossible = anomalies.filter(a => a.severity === 'IMPOSSIBLE');
+            const improbable = anomalies.filter(a => a.severity === 'IMPROBABLE');
+
+            // Show total counts from allAnomalies
+            const totalImpossible = allAnomalies.filter(a => a.severity === 'IMPOSSIBLE').length;
+            const totalImprobable = allAnomalies.filter(a => a.severity === 'IMPROBABLE').length;
+
+            const wastedCost = anomalies.reduce((sum, a) => {
+                const normalUsage = a.maxAllowed || 0;
+                const excessUsage = Math.max(0, a.usage - normalUsage);
+                const costPerKwh = parseFloat(a.cost.replace(/[$,]/g, '')) / a.usage;
+                return sum + (excessUsage * costPerKwh);
+            }, 0);
+
+            const impossibleDisplay = impossible.length === totalImpossible
+                ? totalImpossible
+                : `${impossible.length}/${totalImpossible}`;
+
+            const improbableDisplay = improbable.length === totalImprobable
+                ? totalImprobable
+                : `${improbable.length}/${totalImprobable}`;
+
+            const html = `
+                <div class="summary-card green">
+                    <h3>Total Intervals</h3>
+                    <div class="value">${data.length.toLocaleString()}</div>
+                </div>
+                <div class="summary-card red">
+                    <h3>Impossible Anomalies</h3>
+                    <div class="value">${impossibleDisplay}</div>
+                </div>
+                <div class="summary-card orange">
+                    <h3>Improbable Anomalies</h3>
+                    <div class="value">${improbableDisplay}</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Disputed Charges (Shown)</h3>
+                    <div class="value">$${wastedCost.toFixed(2)}</div>
+                </div>
+            `;
+
+            document.getElementById('summaryCards').innerHTML = html;
+        }
+
+        function displayChart(data, anomalies, config) {
+            const ctx = document.getElementById('usageChart').getContext('2d');
+
+            if (usageChart) {
+                usageChart.destroy();
+            }
+
+            // Sample data for performance if too many points
+            let chartData = data;
+            if (data.length > 1000) {
+                const step = Math.ceil(data.length / 1000);
+                chartData = data.filter((_, i) => i % step === 0);
+            }
+
+            const anomalySet = new Set(anomalies.map(a => a.datetime.getTime()));
+
+            usageChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.map(d => `${d.date} ${d.startTime}`),
+                    datasets: [{
+                        label: 'Usage (kWh)',
+                        data: chartData.map(d => d.usage),
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 2,
+                        pointRadius: chartData.map(d => anomalySet.has(d.datetime.getTime()) ? 6 : 0),
+                        pointBackgroundColor: chartData.map(d => {
+                            if (!anomalySet.has(d.datetime.getTime())) return '#667eea';
+                            const anomaly = anomalies.find(a => a.datetime.getTime() === d.datetime.getTime());
+                            return anomaly?.severity === 'IMPOSSIBLE' ? '#ff6b6b' : '#ffa500';
+                        }),
+                        tension: 0.4
+                    }, {
+                        label: 'Service Capacity Limit',
+                        data: chartData.map(d => config.maxPower * d.duration),
+                        borderColor: '#ff6b6b',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        pointRadius: 0,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += context.parsed.y.toFixed(2) + ' kWh';
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Date/Time'
+                            },
+                            ticks: {
+                                maxTicksLimit: 20
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Usage (kWh)'
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function displayAnomalyTable(anomalies) {
+            const tbody = document.getElementById('anomalyTableBody');
+
+            if (anomalies.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #666;">No anomalies detected! Your usage data looks normal.</td></tr>';
+                return;
+            }
+
+            const html = anomalies.map(a => `
+                <tr>
+                    <td>${a.date} ${a.startTime}</td>
+                    <td>${a.usage.toFixed(2)}</td>
+                    <td>${a.power.toFixed(2)}</td>
+                    <td><span class="severity-badge severity-${a.severity.toLowerCase()}">${a.severity}</span></td>
+                    <td>${a.reason}</td>
+                    <td>${a.notes || '-'}</td>
+                </tr>
+            `).join('');
+
+            tbody.innerHTML = html;
+        }
+
+        function sortTable(columnIndex) {
+            const tbody = document.getElementById('anomalyTableBody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+
+            // Determine sort direction
+            const currentSort = tbody.dataset.sortColumn;
+            const currentDir = tbody.dataset.sortDir || 'asc';
+            const newDir = (currentSort == columnIndex && currentDir === 'asc') ? 'desc' : 'asc';
+
+            rows.sort((a, b) => {
+                const aText = a.cells[columnIndex].textContent.trim();
+                const bText = b.cells[columnIndex].textContent.trim();
+
+                // Try to parse as number
+                const aNum = parseFloat(aText);
+                const bNum = parseFloat(bText);
+
+                let comparison = 0;
+                if (!isNaN(aNum) && !isNaN(bNum)) {
+                    comparison = aNum - bNum;
+                } else {
+                    comparison = aText.localeCompare(bText);
+                }
+
+                return newDir === 'asc' ? comparison : -comparison;
+            });
+
+            tbody.innerHTML = '';
+            rows.forEach(row => tbody.appendChild(row));
+
+            tbody.dataset.sortColumn = columnIndex;
+            tbody.dataset.sortDir = newDir;
+        }
+
+        function exportToCSV() {
+            const showImpossible = document.getElementById('showImpossible').checked;
+            const showImprobable = document.getElementById('showImprobable').checked;
+
+            const filtered = allAnomalies.filter(a => {
+                if (a.severity === 'IMPOSSIBLE') return showImpossible;
+                if (a.severity === 'IMPROBABLE') return showImprobable;
+                return false;
+            });
+
+            if (filtered.length === 0) {
+                alert('No anomalies to export (check your filters)');
+                return;
+            }
+
+            const headers = ['Date', 'Start Time', 'End Time', 'Usage (kWh)', 'Power (kW)', 'Severity', 'Reason', 'Notes'];
+            const rows = filtered.map(a => [
+                a.date,
+                a.startTime,
+                a.endTime,
+                a.usage.toFixed(2),
+                a.power.toFixed(2),
+                a.severity,
+                a.reason,
+                a.notes || ''
+            ]);
+
+            const csv = [headers, ...rows]
+                .map(row => row.map(cell => `"${cell}"`).join(','))
+                .join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'power-anomalies-report.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function toggleCollapsible(button) {
+            button.classList.toggle('active');
+            const content = button.nextElementSibling;
+            content.classList.toggle('active');
+
+            // Toggle arrow
+            const arrow = button.querySelector('span');
+            arrow.textContent = content.classList.contains('active') ? '▲' : '▼';
+        }
+
+        function submitAnonymousData() {
+            if (!parsedData || parsedData.length === 0) {
+                alert('No data to submit');
+                return;
+            }
+
+            const impossible = allAnomalies.filter(a => a.severity === 'IMPOSSIBLE');
+
+            if (impossible.length === 0) {
+                alert('No impossible anomalies detected. Data submission is intended for cases with impossible readings that exceed service capacity.');
+                return;
+            }
+
+            // Show case number input modal
+            showCaseNumberInput(impossible);
+        }
+
+        function showCaseNumberInput(impossible) {
+            const modal = `
+                <div id="caseNumberModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000;">
+                    <div style="background: white; padding: 40px; border-radius: 12px; max-width: 500px;" onclick="event.stopPropagation()">
+                        <h2 style="margin-top: 0;">📋 Optional: PUCO Case Number</h2>
+
+                        <p>If you've already filed a complaint with PUCO, you can include your case number to link your data with the official record.</p>
+
+                        <div class="info-box" style="margin: 20px 0;">
+                            <strong>Public Record:</strong> Your case number will be visible on gridsense.us to help document patterns of billing errors and track regulatory outcomes.
+                        </div>
+
+                        <div style="margin: 20px 0;">
+                            <label for="pucoCase" style="display: block; margin-bottom: 8px; font-weight: 600;">PUCO Case Number (optional)</label>
+                            <input type="text" id="pucoCase" placeholder="e.g., 00947795" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 1rem;">
+                            <small style="color: #666; display: block; margin-top: 5px;">Leave blank if you haven't filed yet - you can add it later</small>
+                        </div>
+
+                        <div style="display: flex; gap: 10px; margin-top: 30px;">
+                            <button onclick="proceedWithSubmission(document.getElementById('pucoCase').value)" style="flex: 1; padding: 12px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                                Continue
+                            </button>
+                            <button onclick="document.getElementById('caseNumberModal').remove()" style="flex: 1; padding: 12px; background: #ccc; color: #333; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', modal);
+        }
+
+        function proceedWithSubmission(pucoCase) {
+            document.getElementById('caseNumberModal').remove();
+
+            const impossible = allAnomalies.filter(a => a.severity === 'IMPOSSIBLE');
+
+            // Anonymize the data
+            const anonymized = parsedData.map(row => ({
+                date: row.date,
+                startTime: row.startTime,
+                endTime: row.endTime,
+                usage: row.usage,
+                cost: row.cost,
+                notes: row.notes
+            }));
+
+            // Create CSV with anonymized data
+            const headers = ['TYPE', 'DATE', 'START TIME', 'END TIME', 'USAGE (kWh)', 'COST', 'NOTES'];
+            const rows = anonymized.map(row => [
+                'Electric usage',
+                row.date,
+                row.startTime,
+                row.endTime,
+                row.usage,
+                row.cost,
+                row.notes || ''
+            ]);
+
+            // Generate filename based on date of first impossible anomaly
+            const firstAnomaly = impossible[0];
+            const dateStr = firstAnomaly.date.replace(/-/g, '');
+            const filename = pucoCase ? `case-${pucoCase}.csv` : `case-${dateStr}.csv`;
+
+            // Add metadata header
+            let csvHeader = 'Name,ANONYMOUS\nAddress,REDACTED\nAccount Number,REDACTED\n';
+            if (pucoCase) {
+                csvHeader += `PUCO Case,${pucoCase}\n`;
+            }
+            csvHeader += '\n';
+
+            const csv = csvHeader + [headers, ...rows]
+                    .map(row => row.map(cell => `${cell}`).join(','))
+                    .join('\n');
+
+            // Download anonymized file
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            // Show instructions modal
+            showSubmissionInstructions(filename, impossible.length, pucoCase);
+        }
+
+        function showSubmissionInstructions(filename, anomalyCount, pucoCase) {
+            const caseInfoHtml = pucoCase ? `<li>PUCO Case Number: <strong>${pucoCase}</strong></li>` : '';
+            const caseValue = pucoCase || '';
+            const instructions = `
+                <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000;" onclick="this.remove()">
+                    <div style="background: white; padding: 40px; border-radius: 12px; max-width: 600px; max-height: 80vh; overflow-y: auto;" onclick="event.stopPropagation()">
+                        <h2 style="margin-top: 0;">📤 Submit Your Data</h2>
+
+                        <p>Your anonymized data file (<strong>${filename}</strong>) has been downloaded.</p>
+
+                        <div style="background: #e7f3ff; border-left: 4px solid #2196f3; padding: 15px; margin: 20px 0;">
+                            <strong>📊 Your Case Summary:</strong>
+                            <ul style="margin: 10px 0 0 20px;">
+                                <li>${anomalyCount} impossible reading(s) detected</li>
+                                ${caseInfoHtml}
+                                <li>All personal information removed</li>
+                                <li>Ready to submit to database</li>
+                            </ul>
+                        </div>
+
+                        <h3>One-Click Submission</h3>
+
+                        <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin: 15px 0; text-align: center;">
+                            <p style="margin-bottom: 15px; font-size: 1.1rem;"><strong>✉️ Email Submission</strong></p>
+                            <p style="margin-bottom: 15px;">Click below and your email will open with everything pre-filled!</p>
+                            <button onclick="sendCaseEmail('${filename}', ${anomalyCount}, '${caseValue.replace(/'/g, "\\'")}'); event.stopPropagation();"
+                                    style="padding: 15px 30px; background: #11998e; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 600; cursor: pointer;">
+                                📧 Open Email to Submit
+                            </button>
+                            <p style="margin-top: 15px; font-size: 0.9rem; color: #666;">Your email client will open. Just attach the ${filename} file and send!</p>
+                        </div>
+
+                        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                            <strong>⏱️ What happens next:</strong> Your case will appear on gridsense.us/cases.html. You'll be in the public database helping others identify similar issues!
+                        </div>
+
+                        <button onclick="this.closest('div[style*=fixed]').remove()" style="padding: 12px 30px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%; margin-top: 20px;">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', instructions);
+        }
+
+        function displayShareButtons(anomalies, config) {
+            const impossible = anomalies.filter(a => a.severity === 'IMPOSSIBLE');
+
+            if (impossible.length === 0) {
+                // Show generic sharing if no anomalies found
+                showGenericShare();
+                return;
+            }
+
+            // Calculate TOTAL impossible usage across all intervals
+            let totalImpossibleUsage = 0;
+            let totalOvercharge = 0;
+            let totalDuration = 0; // Sum of actual interval durations
+            let startDate = null;
+            let endDate = null;
+
+            impossible.forEach(a => {
+                totalImpossibleUsage += a.usage;
+                totalDuration += a.duration; // Sum actual durations
+                const costPerKwh = parseFloat(a.cost.replace(/[$,]/g, '')) / a.usage;
+                const excessUsage = a.usage - a.maxAllowed;
+                totalOvercharge += (excessUsage * costPerKwh);
+
+                if (!startDate || a.datetime < startDate) startDate = a.datetime;
+                if (!endDate || a.datetime > endDate) endDate = a.datetime;
+            });
+
+            // Calculate total max allowed based on service capacity and total duration
+            const totalMaxAllowed = config.maxPower * totalDuration;
+            const totalExcess = totalImpossibleUsage - totalMaxAllowed;
+            const totalHours = totalDuration; // Use sum of durations, not time span
+            const multiplier = (totalImpossibleUsage / totalMaxAllowed).toFixed(1);
+
+            // Fun comparison for sharing
+            const teslaCharges = (totalExcess / 75).toFixed(1);
+            const h200Hours = (totalExcess / 0.7).toFixed(0);
+
+            const stats = {
+                impossibleCount: impossible.length,
+                totalUsage: totalImpossibleUsage.toFixed(0),
+                totalAllowed: totalMaxAllowed.toFixed(0),
+                totalHours: totalHours.toFixed(1),
+                multiplier,
+                serviceAmperage: config.amperage,
+                maxPower: config.maxPower.toFixed(0),
+                overcharge: totalOvercharge.toFixed(2),
+                startDate: startDate.toLocaleDateString(),
+                teslaCharges,
+                h200Hours,
+                totalExcess: totalExcess.toFixed(0)
+            };
+
+            generateShareContent(stats);
+            generateShareImage(stats);
+            document.getElementById('shareSection').classList.remove('hidden');
+        }
+
+        function generateShareContent(stats) {
+            const url = 'https://gridsense.us';
+
+            // Twitter/X (280 chars max) - with fun comparison
+            const funFact = stats.teslaCharges >= 1
+                ? `Could charge ${stats.teslaCharges} Teslas!`
+                : `That's ${stats.h200Hours}hrs of H200 GPU time!`;
+
+            const twitterText = `🚨 CAUGHT: My utility charged me for ${stats.totalUsage} kWh over ${stats.totalHours} hours.\n\n${stats.serviceAmperage}A @ 240V = ${stats.maxPower} kW (${stats.maxPower} kWh/hr max)\nOver ${stats.totalHours} hrs = ${stats.totalAllowed} kWh max possible\n\nThey charged ${stats.totalUsage} kWh = ${stats.multiplier}x IMPOSSIBLE!\n\n${funFact} $${stats.overcharge} bogus.\n\n${url}\n\n#UtilityBilling`;
+
+            // Facebook (longer form)
+            const facebookText = `I just discovered IMPOSSIBLE charges on my electric bill using GridSense.\n\n🔴 The Facts:\n• My service: ${stats.serviceAmperage}A @ 240V = ${stats.maxPower} kW maximum (${stats.maxPower} kWh per hour)\n• Time period: ${stats.totalHours} hours\n• Maximum physically possible: ${stats.maxPower} kWh/hr × ${stats.totalHours} hrs = ${stats.totalAllowed} kWh\n• What they charged me for: ${stats.totalUsage} kWh\n• That's ${stats.multiplier}x what's physically possible!\n• Bogus charges: $${stats.overcharge}\n• Found ${stats.impossibleCount} impossible readings\n\n⚡ This isn't just an error – these readings violate the laws of physics. My electrical panel literally CANNOT deliver that much power.\n\n💡 To put it in perspective, the ${stats.totalExcess} kWh of excess energy they charged me for could:\n• Fully charge ${stats.teslaCharges} Tesla Model 3s\n• Run an H200 GPU for ${stats.h200Hours} hours\n• Power an average home for ${(parseFloat(stats.totalExcess) / 30).toFixed(1)} days\n\nI found this using a free tool at ${url}\n\nHow many people are being overcharged and don't even know it? Check your bill!\n\n#UtilityBilling #ElectricBill #ConsumerProtection`;
+
+            // LinkedIn (professional angle)
+            const linkedinText = `🔍 Data Analysis Reveals Utility Billing Irregularities\n\nUsing open-source analysis tools, I discovered physically impossible energy consumption charges on my electric bill:\n\n📊 Analysis:\n• Service capacity: ${stats.serviceAmperage}A @ 240V = ${stats.maxPower} kW maximum (${stats.maxPower} kWh/hr)\n• Time period: ${stats.totalHours} hours\n• Maximum possible: ${stats.maxPower} × ${stats.totalHours} = ${stats.totalAllowed} kWh\n• Billed usage: ${stats.totalUsage} kWh\n• Ratio: ${stats.multiplier}x physical capacity\n• Impossible readings: ${stats.impossibleCount} intervals\n• Financial impact: $${stats.overcharge}\n\n⚖️ This raises questions about:\n✓ Meter accuracy and calibration\n✓ Billing system data validation\n✓ Consumer protection mechanisms\n✓ Industry-wide quality control\n\nI've filed a formal complaint with PUCO (Public Utilities Commission of Ohio).\n\nOther consumers can verify their bills at: ${url}\n\n#Utilities #ConsumerProtection #DataAnalysis #EnergyIndustry`;
+
+            // Reddit (discussion-focused)
+            const redditText = `I caught my utility company charging me for electricity usage that's PHYSICALLY IMPOSSIBLE\n\nUsing a free tool (${url}), I analyzed my usage data and found:\n\n• ${stats.impossibleCount} impossible readings exceeding my electrical service capacity\n• My service: ${stats.serviceAmperage}A @ 240V = ${stats.maxPower} kW (${stats.maxPower} kWh per hour max)\n• Time period: ${stats.totalHours} hours\n• Maximum possible: ${stats.maxPower} kWh/hr × ${stats.totalHours} hrs = ${stats.totalAllowed} kWh\n• What they charged me: ${stats.totalUsage} kWh\n• That's ${stats.multiplier}x what's physically possible!\n• Cost of these impossible charges: $${stats.overcharge}\n\nThis isn't just a meter glitch - these readings violate physics. My panel literally can't deliver that much power.\n\nTo put this in perspective, the ${stats.totalExcess} kWh of impossible usage they charged me for could:\n- Charge ${stats.teslaCharges} Tesla Model 3s from empty\n- Run ${stats.h200Hours} hours of H200 GPU compute\n- Power an average home for ${(parseFloat(stats.totalExcess) / 30).toFixed(1)} days\n\nFiled a complaint with PUCO. Anyone else dealing with this?\n\nYou can check your own bills at the link above. Takes 2 minutes.`;
+
+            // Create share buttons
+            const buttonsHtml = `
+                <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterText)}"
+                   target="_blank"
+                   class="share-btn twitter"
+                   onclick="trackShare('twitter')">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                    Share on X
+                </a>
+                <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(facebookText)}"
+                   target="_blank"
+                   class="share-btn facebook"
+                   onclick="trackShare('facebook')">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                    Share on Facebook
+                </a>
+                <a href="https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}&summary=${encodeURIComponent(linkedinText)}"
+                   target="_blank"
+                   class="share-btn linkedin"
+                   onclick="trackShare('linkedin')">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                    Share on LinkedIn
+                </a>
+                <button class="share-btn reddit" onclick="shareToReddit('${redditText.replace(/'/g, "\\'")}', '${url}'); trackShare('reddit')">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>
+                    Share on Reddit
+                </button>
+            `;
+
+            document.getElementById('shareButtons').innerHTML = buttonsHtml;
+
+            // Show preview of Twitter text (fits all platforms)
+            const previewHtml = `
+                <strong>Preview:</strong><br>
+                ${twitterText.replace(/\n/g, '<br>')}
+            `;
+            document.getElementById('sharePreview').innerHTML = previewHtml;
+        }
+
+        function generateShareImage(stats) {
+            // Create canvas for social media image (1200x630px - optimal for FB/Twitter)
+            const canvas = document.createElement('canvas');
+            canvas.width = 1200;
+            canvas.height = 630;
+            const ctx = canvas.getContext('2d');
+
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, 630);
+            gradient.addColorStop(0, '#1a1a2e');
+            gradient.addColorStop(1, '#16213e');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1200, 630);
+
+            // Add subtle grid pattern
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 1200; i += 40) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, 630);
+                ctx.stroke();
+            }
+            for (let i = 0; i < 630; i += 40) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(1200, i);
+                ctx.stroke();
+            }
+
+            // Title
+            ctx.fillStyle = '#ff4757';
+            ctx.font = 'bold 60px Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('⚡ IMPOSSIBLE ELECTRICITY CHARGES', 600, 80);
+
+            // Main stats box
+            ctx.fillStyle = 'rgba(255, 71, 87, 0.1)';
+            ctx.fillRect(100, 120, 1000, 240);
+            ctx.strokeStyle = '#ff4757';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(100, 120, 1000, 240);
+
+            // Stats text - show the math
+            ctx.fillStyle = '#70a1ff';
+            ctx.font = '28px Arial, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(`${stats.serviceAmperage}A @ 240V = ${stats.maxPower} kW (${stats.maxPower} kWh/hr max)`, 150, 160);
+            ctx.fillText(`Over ${stats.totalHours} hours`, 150, 200);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 40px Arial, sans-serif';
+            ctx.fillText(`Max Possible: ${stats.totalAllowed} kWh`, 150, 250);
+            ctx.fillStyle = '#ff4757';
+            ctx.fillText(`They Charged: ${stats.totalUsage} kWh`, 150, 300);
+
+            // Multiplier (big and prominent)
+            ctx.fillStyle = '#ff4757';
+            ctx.font = 'bold 80px Arial, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText(`${stats.multiplier}x`, 1050, 240);
+
+            ctx.fillStyle = '#ffa502';
+            ctx.font = 'bold 36px Arial, sans-serif';
+            ctx.fillText('IMPOSSIBLE!', 1050, 300);
+
+            // Bottom section - impact comparisons
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 32px Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${stats.totalExcess} kWh of bogus charges = $${stats.overcharge}`, 600, 410);
+
+            // Fun comparisons
+            const compY = 480;
+            ctx.font = '28px Arial, sans-serif';
+            ctx.fillStyle = '#70a1ff';
+
+            if (parseFloat(stats.teslaCharges) >= 1) {
+                ctx.fillText(`🚗 Could charge ${stats.teslaCharges} Tesla Model 3s`, 300, compY);
+            } else {
+                ctx.fillText(`🖥️ ${stats.h200Hours} hours of H200 GPU`, 300, compY);
+            }
+
+            const homeDays = (parseFloat(stats.totalExcess) / 30).toFixed(1);
+            ctx.fillText(`🏠 ${homeDays} days of home power`, 900, compY);
+
+            // Footer
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 36px Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('gridsense.us', 600, 560);
+
+            ctx.font = '24px Arial, sans-serif';
+            ctx.fillStyle = '#95afc0';
+            ctx.fillText('Check YOUR bill for free', 600, 595);
+
+            // Convert canvas to image and display
+            const imageContainer = document.getElementById('shareImageContainer');
+            if (imageContainer) {
+                imageContainer.innerHTML = '';
+                const img = document.createElement('img');
+                img.src = canvas.toDataURL('image/png');
+                img.style.maxWidth = '100%';
+                img.style.border = '2px solid #ff4757';
+                img.style.borderRadius = '8px';
+                img.style.marginTop = '20px';
+                imageContainer.appendChild(img);
+
+                // Add download button
+                const downloadBtn = document.createElement('button');
+                downloadBtn.className = 'btn';
+                downloadBtn.innerHTML = '📥 Download Share Image';
+                downloadBtn.style.marginTop = '10px';
+                downloadBtn.onclick = () => {
+                    const link = document.createElement('a');
+                    link.download = 'gridsense-anomaly.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                };
+                imageContainer.appendChild(downloadBtn);
+            }
+        }
+
+        function shareToReddit(text, url) {
+            const redditUrl = `https://www.reddit.com/submit?title=${encodeURIComponent('Caught my utility charging for IMPOSSIBLE electricity usage')}&text=${encodeURIComponent(text)}`;
+            window.open(redditUrl, '_blank');
+        }
+
+        function trackShare(platform) {
+            // Could add analytics here if desired
+            console.log(`Shared to ${platform}`);
+        }
+
+        function sendCaseEmail(filename, anomalyCount, pucoCase) {
+            const caseNum = pucoCase || 'Not filed yet';
+            const subject = `Case Submission: ${filename}`;
+            const body = `Hi GridSense Team,
+
+I'm submitting my anonymized usage data for the case database.
+
+CASE DETAILS:
+- File: ${filename}
+- PUCO Case: ${caseNum}
+- Impossible Readings: ${anomalyCount}
+- Status: ${pucoCase ? 'Filed with PUCO' : 'Not yet filed'}
+
+ATTACHED FILE:
+I've attached the ${filename} file to this email.
+
+CONFIRMATION:
+✅ All personal information has been removed
+✅ I consent to this data being publicly available on gridsense.us
+✅ This is my own utility data
+
+Thank you!`;
+
+            const mailtoLink = `mailto:cases@gridsense.us?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            window.location.href = mailtoLink;
+        }
+
+        function displayImpactComparisons(anomalies, config) {
+            const impossible = anomalies.filter(a => a.severity === 'IMPOSSIBLE');
+
+            if (impossible.length === 0) {
+                document.getElementById('impactSection').classList.add('hidden');
+                return;
+            }
+
+            // Calculate total excess energy (impossible - max allowed)
+            const totalExcess = impossible.reduce((sum, a) => {
+                return sum + (a.usage - a.maxAllowed);
+            }, 0);
+
+            if (totalExcess <= 0) {
+                document.getElementById('impactSection').classList.add('hidden');
+                return;
+            }
+
+            // Fun comparisons (all per kWh)
+            const comparisons = [
+                {
+                    icon: '🖥️',
+                    value: (totalExcess / 0.7).toFixed(0),  // H200 GPU uses ~700W = 0.7 kW
+                    label: 'Hours of H200 GPU Runtime',
+                    calc: totalExcess / 0.7
+                },
+                {
+                    icon: '🚗',
+                    value: (totalExcess / 75).toFixed(1),  // Tesla Model 3 = 75 kWh battery
+                    label: 'Tesla Model 3 Full Charges',
+                    calc: totalExcess / 75
+                },
+                {
+                    icon: '🏠',
+                    value: (totalExcess / 30).toFixed(1),  // Average home uses ~30 kWh/day
+                    label: 'Days of Average Home Power',
+                    calc: totalExcess / 30
+                },
+                {
+                    icon: '💡',
+                    value: (totalExcess * 100).toFixed(0),  // 10W LED = 0.01 kWh per hour
+                    label: 'Hours of LED Bulbs',
+                    calc: totalExcess * 100
+                },
+                {
+                    icon: '❄️',
+                    value: (totalExcess / 0.15).toFixed(0),  // Home AC uses ~150W average = 0.15 kW
+                    label: 'Hours of AC Cooling',
+                    calc: totalExcess / 0.15
+                },
+                {
+                    icon: '🎮',
+                    value: (totalExcess / 0.2).toFixed(0),  // Gaming PC uses ~200W = 0.2 kW
+                    label: 'Hours of Gaming',
+                    calc: totalExcess / 0.2
+                },
+                {
+                    icon: '☕',
+                    value: (totalExcess * 10).toFixed(0),  // Coffee maker uses ~1kW for 6 min = 0.1 kWh per brew
+                    label: 'Pots of Coffee Brewed',
+                    calc: totalExcess * 10
+                },
+                {
+                    icon: '📱',
+                    value: (totalExcess * 5000).toFixed(0),  // iPhone charges use ~0.02 kWh
+                    label: 'iPhone Charges',
+                    calc: totalExcess * 5000
+                }
+            ];
+
+            // Pick top 4 most interesting comparisons (good visual values)
+            const displayed = comparisons
+                .filter(c => c.calc >= 0.5 && c.calc < 100000) // Sweet spot for readability
+                .sort((a, b) => {
+                    // Prefer values between 1-500 for best visual impact
+                    const scoreA = Math.abs(Math.log10(Math.max(1, a.calc)) - 1.5);
+                    const scoreB = Math.abs(Math.log10(Math.max(1, b.calc)) - 1.5);
+                    return scoreA - scoreB;
+                })
+                .slice(0, 4);
+
+            const html = displayed.map(comp => `
+                <div class="impact-card">
+                    <div class="impact-icon">${comp.icon}</div>
+                    <div class="impact-value">${comp.value}</div>
+                    <div class="impact-label">${comp.label}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('impactCards').innerHTML = html;
+            document.getElementById('impactSection').classList.remove('hidden');
+        }
+
+        function showGenericShare() {
+            const url = 'https://gridsense.us';
+            const twitterText = `✅ I just checked my electric bill for impossible charges using @GridSense.\n\nNo anomalies found - but many people are getting overcharged!\n\nFree tool analyzes your usage data and catches physically impossible readings.\n\nCheck yours: ${url}\n\n#UtilityBilling #ConsumerRights`;
+
+            const buttonsHtml = `
+                <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterText)}"
+                   target="_blank"
+                   class="share-btn twitter">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                    Share This Tool
+                </a>
+            `;
+
+            document.getElementById('shareButtons').innerHTML = buttonsHtml;
+            document.getElementById('sharePreview').innerHTML = '<strong>✅ Good news!</strong> No impossible anomalies detected. Help others check their bills by sharing this tool.';
+            document.getElementById('shareSection').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
